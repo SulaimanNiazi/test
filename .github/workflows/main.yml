@@ -22,9 +22,9 @@ jobs:
 
     # 2. Setup ESP-IDF
     - name: Setup ESP-IDF
-      uses: espressif/setup-esp-idf@v1
+      uses: espressif/esp-idf-ci-action@v1
       with:
-        esp-idf-version: v5.2
+        esp_idf_version: v5.2
         target: esp32
 
     # 3. Set hardware variant
