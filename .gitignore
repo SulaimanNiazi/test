@@ -1,0 +1,9 @@
+# Directories
+Build/*
+.vscode/*
+
+# Files
+sdkconfig
+sdkconfig.old
+
+# Exceptions
