@@ -35,9 +35,9 @@ jobs:
     # 4. Build firmware
     - name: Build firmware
       run: |
-        idf.py \
-          -DHW_ID=$HW_ID \
-          build
+        . $IDF_PATH/export.sh
+        idf.py set-target esp32
+        idf.py -DHW_ID=$HW_ID build
 
     # 5. Rename OTA binary
     - name: Rename firmware binary
