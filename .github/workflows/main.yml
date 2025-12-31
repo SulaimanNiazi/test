@@ -1,83 +1,48 @@
-name: ESP-IDF OTA CI/CD
+name: ESP-IDF OTA Build
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [ main ]
+    tags: [ "v*" ]
+  pull_request:
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        hw: [HW_A, HW_B]
+        hw: [ESP32 WROOM 32]
 
     steps:
-    # 1. Checkout repository
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      # 1. Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # 2. Setup ESP-IDF
-    - name: Setup ESP-IDF
-      uses: espressif/esp-idf-ci-action@v1
-      with:
-        esp_idf_version: v5.2
-        target: esp32
+      # 2. Setup ESP-IDF
+      - name: Setup ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.2
+          target: esp32
 
-    # 3. Set hardware variant
-    - name: Configure hardware variant
-      run: |
-        echo "HW_ID=${{ matrix.hw }}" >> $GITHUB_ENV
+      # 3. Build firmware
+      - name: Build OTA firmware
+        env:
+          HW_ID: ${{ matrix.hw }}
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
 
-    # 4. Build firmware
-    - name: Build firmware
-      run: |
-        . $IDF_PATH/export.sh
-        idf.py set-target esp32
-        idf.py -DHW_ID=$HW_ID build
+      # 4. Collect OTA binary
+      - name: Collect OTA binary
+        run: |
+          mkdir -p output/${{ matrix.hw }}
+          cp build/Git_OTA.bin output/${{ matrix.hw }}/Git_OTA.bin
 
-    # 5. Rename OTA binary
-    - name: Rename firmware binary
-      run: |
-        cp build/*.bin app-${{ matrix.hw }}.bin
-
-    # 6. Generate SHA-256 checksum
-    - name: Generate SHA256
-      run: |
-        sha256sum app-${{ matrix.hw }}.bin | awk '{print $1}' > sha.txt
-
-    # 7. Create GitHub Release & upload binary
-    - name: Publish release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref_name }}
-        files: app-${{ matrix.hw }}.bin
-
-    # 8. Update version.json
-    - name: Update version.json
-      run: |
-        VERSION="${{ github.ref_name }}"
-        BIN_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/app-${{ matrix.hw }}.bin"
-        SHA=$(cat sha.txt)
-
-        jq \
-          --arg hw "$HW_ID" \
-          --arg ver "$VERSION" \
-          --arg url "$BIN_URL" \
-          --arg sha "$SHA" \
-          '.hardware[$hw] = {version: $ver, url: $url, sha256: $sha}' \
-          version.json > version.tmp
-
-        mv version.tmp version.json
-
-    # 9. Commit updated version.json
-    - name: Commit version.json
-      run: |
-        git config user.name "github-actions"
-        git config user.email "actions@github.com"
-        git add version.json
-        git commit -m "OTA release ${{ github.ref_name }} for $HW_ID"
-        git push
+      # 5. Upload artifact
+      - name: Upload OTA binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ota-${{ matrix.hw }}
+          path: output/${{ matrix.hw }}/Git_OTA.bin
