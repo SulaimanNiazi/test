@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TARGET: esp32   # change to esp32s3, esp32c3, etc. if needed
+      target: esp32
 
     steps:
       - name: Checkout repository
@@ -21,18 +21,21 @@ jobs:
       - name: Build with ESP-IDF
         uses: espressif/esp-idf-ci-action@v1.1.0
         with:
-          esp_idf_version: latest   # or v5.2, etc.
-          target: ${{ env.TARGET }}
+          esp_idf_version: v5.5.1
+          target: ${{ env.target }}
           path: '.'
           command: |
             idf.py build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-binaries
-          path: |
-            build/*.bin
+      - name: Get binary
+        run: |
+          bin=$(ls build/*.bin \
+          | grep -v bootloader \
+          | grep -v partition \
+          | grep -v ota_data \
+          | head -n 1)
+
+          echo "bin=$bin" >> $GITHUB_ENV 
 
       - name: Create GitHub Release with firmware
         uses: softprops/action-gh-release@v1
@@ -40,3 +43,10 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             build/*.bin
+            
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binaries
+          path: |
+            ${{ env.bin }}
