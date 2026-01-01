@@ -1,10 +1,10 @@
 {
-    "ESP32 WROOM 32": {
-        "version": "2.2.1",
-        "sha256": ""
-    },
-    "test": {
-        "version": "3.2.1",
-        "sha256": ""
-    }
+  "ESP32 WROOM 32": {
+    "version": "2.2.7",
+    "sha256": "ac08cbb6f61a6b5e69a9197dafbb7dc84d1cea5067e722e29e9b9bb7a50b149c"
+  },
+  "test": {
+    "version": "3.2.1",
+    "sha256": ""
+  }
 }
