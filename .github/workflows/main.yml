@@ -83,9 +83,9 @@ jobs:
           mv manifest.tmp manifest.json
 
       - name: Commit changes to manifest file
+        env:
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
           git add manifest.json
           git commit -m "Update manifest for ${{env.hardware}} (${{env.version}})"
           git push origin HEAD:main
