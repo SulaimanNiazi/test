@@ -29,13 +29,21 @@ jobs:
 
       - name: Get binary
         run: |
-          bin=$(ls build/*.bin \
-          | grep -v bootloader \
-          | grep -v partition \
-          | grep -v ota_data \
-          | head -n 1)
+          bin=$(jq -r '
+            .flash_files
+            | to_entries[]
+            | select(.key == "0x10000")
+            | .value
+          ' build/flasher_args.json)
 
           echo "bin=$bin" >> $GITHUB_ENV 
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binaries
+          path: |
+            ${{ env.bin }}
 
       - name: Create GitHub Release with firmware
         uses: softprops/action-gh-release@v1
@@ -43,10 +51,3 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             build/*.bin
-            
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-binaries
-          path: |
-            ${{ env.bin }}
