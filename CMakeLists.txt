@@ -7,4 +7,4 @@ cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 add_compile_definitions(hardware="ESP32 WROOM 32")
-project(Git_OTA VERSION 2.2.8)
+project(Git_OTA VERSION 2.2.9)

@@ -37,6 +37,7 @@ jobs:
 
           if [ "v$version" != "${{github.ref_name}}" ]; then
             echo "Version mismatch!\nv$version != ${{github.ref_name}}"
+
             exit 1
           fi
 
@@ -78,18 +79,14 @@ jobs:
             --arg ver "${{env.version}}" \
             --arg sha "$sha" \
             '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
-            manifest.json > manifest.tmp
+            manifest.json > manifest.json
           
-          mv manifest.tmp manifest.json
+        #   mv manifest.tmp manifest.json
 
       - name: Commit changes to manifest file
-        env:
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/${GITHUB_REPOSITORY}.git
-
           git add manifest.json
           git commit -m "Update manifest for ${{env.hardware}} (${{env.version}})" || echo "Nothing to commit"
           git push origin HEAD:main
