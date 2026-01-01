@@ -75,3 +75,9 @@ jobs:
           tag_name: ${{github.ref_name}}
           files: |
             ${{ env.bin }}
+      
+      - name: Delete tag on failure
+        if: failure()
+        run: |
+          git push origin ":refs/tags/${{github.ref_name}}" || true
+          gh release delete "${{github.ref_name}}" --yes || true
