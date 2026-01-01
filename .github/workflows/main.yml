@@ -75,8 +75,8 @@ jobs:
 
           jq \
             --arg hw "${{env.hardware}}" \
-            -- arg ver "${{env.version}}" \
-            -- arg sha "$sha" \
+            --arg ver "${{env.version}}" \
+            --arg sha "$sha" \
             '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
             manifest.json > manifest.tmp
           
