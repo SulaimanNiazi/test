@@ -1,4 +1,4 @@
-name: Build ESP-IDF firmware
+name: Build and upload firmware release
 
 on:
   push:
@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      idf_version: v5.5.1
       target: esp32
       bin: build/*.bin
 
@@ -20,10 +21,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build with ESP-IDF
-        uses: espressif/esp-idf-ci-action@v1.1.0
+        uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.5.1
-          target: ${{ env.target }}
+          esp_idf_version: ${{env.idf_version}}
+          target: ${{env.target}}
           path: '.'
           command: |
             idf.py build
@@ -43,11 +44,25 @@ jobs:
       #   with:
       #     name: firmware-binaries
       #     path: |
-      #       ${{ env.bin }}
+      #       ${{env.bin}}
 
       - name: Create GitHub Release with firmware
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{github.ref_name}}
           files: |
             ${{ env.bin }}
+
+      - name: Get hardware from CMakeLists.txt
+        env:
+          hardware: ~
+        run: |
+          hardware=$(grep -oP 'add_compile_definitions\s*\(\s*hardware\s*=\s*"\K[^"]+' CMakeLists.txt)
+
+          if [-z "$hardware"]; then
+            echo "Hardware not found in CMakeLists.txt"
+            exit 1
+          fi
+
+          echo "Detected hardware: $hardware"
+          echo "hardware=$hardware" >> $GITHUB_ENV
