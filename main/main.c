@@ -56,9 +56,8 @@ void app_main(){
     connect_wifi();
 
     check_ota();
-    const char *hardware = hardware;
-    const char *current = ota_get_version(false), *latest = ota_get_version(true);
-    uart_printf(uart_num, "\r\nHardware version: %s\r\nCurrent version: %s\r\nLatest version:  %s\r\n", hardware, current, latest);
+    const char *hd = hardware, *current = ota_get_version(false), *latest = ota_get_version(true);
+    uart_printf(uart_num, "\r\nHardware version: %s\r\nCurrent version: %s\r\nLatest version:  %s\r\n", hd, current, latest);
 
     if(ota_up_to_date()){
         uart_printf(uart_num, "Up to date\r\n");
