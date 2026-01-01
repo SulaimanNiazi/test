@@ -80,7 +80,7 @@ jobs:
             '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
             manifest.json > manifest.tmp
           
-          mv manifest.tmp > manifest.json
+          mv manifest.tmp manifest.json
 
       - name: Commit changes to manifest file
         run: |
