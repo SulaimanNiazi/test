@@ -13,6 +13,7 @@ jobs:
 
     env:
       target: esp32
+      bin: build/*.bin
 
     steps:
       - name: Checkout repository
@@ -27,27 +28,26 @@ jobs:
           command: |
             idf.py build
 
-      - name: Get binary
+      - name: Get firmware binary
         run: |
-          bin=$(jq -r '
-            .flash_files
-            | to_entries[]
-            | select(.key == "0x10000")
-            | .value
-          ' build/flasher_args.json)
+          bin=$(ls ${{env.bin}} \
+          | grep -v bootloader \
+          | grep -v partition \
+          | grep -v ota_data \
+          | head -n 1)
 
-          echo "bin=$bin" >> $GITHUB_ENV 
+          echo "bin=$bin" >> $GITHUB_ENV
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-binaries
-          path: |
-            ${{ env.bin }}
+      # - name: Upload build artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: firmware-binaries
+      #     path: |
+      #       ${{ env.bin }}
 
       - name: Create GitHub Release with firmware
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/*.bin
+            ${{ env.bin }}
