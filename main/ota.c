@@ -1,5 +1,6 @@
 #include "ota.h"
 #include "log.h"
+// #include "sdkconfig.h"
 
 #include "esp_app_desc.h"
 #include "esp_http_client.h"
@@ -10,10 +11,11 @@ static char buffer[OTA_MAX_LENGTH], current[32], latest[32] = "0.0.0";
 static bool up_to_date = true;
 static volatile size_t buffer_len = 0;
 static esp_https_ota_handle_t ota_handle = NULL;
+const char *OTA_HARDWARE = hardware;
 
 void process_section(const char *section){
     if(strstr(section, OTA_HARDWARE)){
-        char *read = strstr(section, "\": \"") + 3;
+        char *read = strstr(section, "version\": \"") + 10;
         bool newer = false;
         for(size_t write = 0; (*(++read) != '\"') && (write < 32); write++){
             if(*read == '.'){
@@ -34,7 +36,7 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     const char *data = event->data;
     const size_t len = event->data_len;
     for(size_t i = 0; i < len; i++){
-        if(data[i] == ']'){
+        if(data[i] == '}' && data[i-1] == ' '){
             buffer[buffer_len] = '\0';
             process_section(buffer);
             buffer_len = 0;
@@ -50,6 +52,8 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
 
 void check_ota(){
     const esp_app_desc_t *app = esp_app_get_description();
+    ESP_LOGI(OTA_LOG_TAG, "Project: %s", app->project_name);
+    // ESP_LOGI(OTA_LOG_TAG, "hardware: %s", CONFIG_PROJECT_HARDWARE);
     sprintf(current, "%s", app->version);
     
     esp_http_client_config_t client_config = {
@@ -91,11 +95,11 @@ void ota_update(){
         return;
     }
 
-    snprintf(buffer, OTA_MAX_LENGTH, "%s/%s.bin", OTA_FIRMWARE_URL, latest);
+    snprintf(buffer, OTA_MAX_LENGTH, "%s", OTA_FIRMWARE_URL);
     ESP_LOGI(OTA_LOG_TAG, "Generated link: %s", buffer);
     esp_http_client_config_t client_config = {
         .url                = buffer,
-        .crt_bundle_attach  = esp_crt_bundle_attach,
+        .timeout_ms = 15000,
     };
     esp_https_ota_config_t ota_config = {
         .http_config = &client_config,
