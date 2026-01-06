@@ -47,8 +47,6 @@ jobs:
         env:
           json: "build/project_description.json"
         run: |
-          set -e
-
           version=$(jq -r '.project_version' "$json")
           if [ "v$version" != "${{github.ref_name}}" ]; then
             echo "Version mismatch!\nv$version != ${{github.ref_name}}"
