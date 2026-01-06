@@ -6,7 +6,7 @@
 #include "esp_https_ota.h"
 #include "esp_crt_bundle.h"
 
-static char buffer[OTA_MAX_LENGTH], sha[64], link[32], current[32], latest[32] = "0.0.0";
+static char buffer[OTA_MAX_LENGTH], sha[64], url[32], current[32], latest[32] = "0.0.0";
 static bool up_to_date = true;
 static volatile size_t buffer_len = 0;
 static esp_https_ota_handle_t ota_handle = NULL;
@@ -39,9 +39,9 @@ void check_ota(){
     const esp_app_desc_t *app = esp_app_get_description();
     sprintf(current, "%s", app->version);
     
-    snprintf(link, OTA_MAX_LENGTH, "%s%s.bin", OTA_FIRMWARE_URL, hardware);
+    snprintf(url, OTA_MAX_LENGTH, "%s%s.bin", OTA_FIRMWARE_URL, hardware);
     esp_http_client_config_t client_config = {
-        .url                = link,
+        .url                = url,
         .crt_bundle_attach  = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client_handle = esp_http_client_init(&client_config);
@@ -80,7 +80,7 @@ void ota_update(){
     }
 
     esp_http_client_config_t client_config = {
-        .url                = link,
+        .url                = url,
         .crt_bundle_attach  = esp_crt_bundle_attach,
     };
     esp_https_ota_config_t ota_config = {
