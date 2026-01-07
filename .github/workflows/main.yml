@@ -78,7 +78,7 @@ jobs:
           repository: SulaimanNiazi/test0
           ref: main
           path: public-repo
-          token: ${{secrets.GITHUB_TOKEN}}
+          token: ${{secrets.ACCESS_TOKEN}}
       
       - name: Copy firmware to public repo
         run: |
