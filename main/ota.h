@@ -1,8 +1,8 @@
 #pragma once
 
 #define OTA_DISABLED        false
-#define OTA_FIRMWARE_URL    "https://raw.githubusercontent.com/SulaimanNiazi/test/refs/heads/main/firmwares/"
-#define OTA_VERSION_URL     "https://raw.githubusercontent.com/SulaimanNiazi/test/refs/heads/main/manifest.json"
+#define OTA_RELEASE_URL     "https://raw.githubusercontent.com/SulaimanNiazi/test0/refs/heads/main/firmwares/"
+#define OTA_VERSION_URL     "https://raw.githubusercontent.com/SulaimanNiazi/test0/refs/heads/main/manifest.json"
 #define OTA_MAX_LENGTH      200
 #define OTA_LOG_TAG         "OTA"
 #define OTA_VERSION_INDEX   47

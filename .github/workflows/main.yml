@@ -14,7 +14,8 @@ jobs:
     env:
       idf_version: v5.5.1
       target: esp32
-      bin: build/*.bin
+      build: build/*.bin
+      bin: ~
       hardware: ~
       version: ~
 
@@ -55,11 +56,9 @@ jobs:
           fi
           
           build="build/$(jq -r '.app_bin' "$json")"
-          bin="firmwares/${{env.hardware}}.bin"
-          mv -f "$build" "$bin"
-          echo "bin=$bin" >> $GITHUB_ENV
+          echo "build=$build" >> $GITHUB_ENV
 
-      #   bin=$(ls ${{env.bin}} \
+      #   bin=$(ls build/*.bin \
       #   | grep -v bootloader \
       #   | grep -v partition \
       #   | grep -v ota_data \
@@ -73,24 +72,41 @@ jobs:
       #     path: |
       #       ${{env.bin}}
 
-      # - name: Update manifest file
-      #   run: |
-      #     sha=$(sha256sum build/Git_OTA.bin | awk '{print $1}')
+      - name: Checkout Public Repo
+        uses: actions/checkout@v4
+        with:
+          repository: SulaimanNiazi/test0
+          ref: main
+          path: public-repo
+          token: ${{secrets.GITHUB_TOKEN}}
+      
+      - name: Copy firmware to public repo
+        run: |
+          bin="public-repo/firmwares/${{env.hardware}}.bin"
+          echo "bin=$bin" >> $GITHUB_ENV
 
-      #     jq \
-      #       --arg hw "${{env.hardware}}" \
-      #       --arg ver "${{env.version}}" \
-      #       --arg sha "$sha" \
-      #       '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
-      #       manifest.json > manifest.tmp
+          mkdir -p public-repo/firmwares
+          cp "${{env.build}}" "$bin"
+
+      - name: Update manifest file
+        run: |
+          sha=$(sha256sum ${{env.bin}} | awk '{print $1}')
+
+          jq \
+            --arg hw "${{env.hardware}}" \
+            --arg ver "${{env.version}}" \
+            --arg sha "$sha" \
+            '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
+            public-repo/manifest.json > manifest.tmp
           
-      #     mv manifest.tmp manifest.json
+          mv manifest.tmp public-repo/manifest.json
 
       - name: Commit and push changes
         run: |
+          cd public-repo
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add firmwares
+          git add manifest.json firmwares
           git commit -m "Update firmware for ${{env.hardware}} (${{env.version}})" || echo "Nothing to commit"
           git push origin HEAD:main
 

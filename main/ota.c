@@ -6,7 +6,7 @@
 #include "esp_https_ota.h"
 #include "esp_crt_bundle.h"
 
-static char buffer[OTA_MAX_LENGTH], sha[64], url[32], current[32], latest[32] = "0.0.0";
+static char buffer[OTA_MAX_LENGTH], current[32], latest[32];
 static bool up_to_date = true;
 static volatile size_t buffer_len = 0;
 static esp_https_ota_handle_t ota_handle = NULL;
@@ -20,10 +20,12 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     for(size_t i = 0; i < len; i++){
         if(data[i] == '}'){
             buffer[buffer_len] = '\0';
+
             if(strstr(buffer, hardware)){
                 char *read = strstr(buffer, "\": \"") + 3;
-                for(size_t write = 0; (*(++read) != '\"') && (write < 64); sha[write++] = *read);
+                for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
             }
+
             buffer_len = 0;
         }
         else if(buffer_len < OTA_MAX_LENGTH){
@@ -39,29 +41,21 @@ void check_ota(){
     const esp_app_desc_t *app = esp_app_get_description();
     sprintf(current, "%s", app->version);
     
-    snprintf(url, OTA_MAX_LENGTH, "%s%s.bin", OTA_FIRMWARE_URL, hardware);
     esp_http_client_config_t client_config = {
-        .url                = url,
+        .url                = OTA_VERSION_URL,
         .crt_bundle_attach  = esp_crt_bundle_attach,
+        .event_handler      = event_handler,
     };
     esp_http_client_handle_t client_handle = esp_http_client_init(&client_config);
     
-    bool error = true;
-    if(loge_success(OTA_LOG_TAG, esp_http_client_open(client_handle, 0), "failed to open connection to read metadata")){
-        int64_t headers = esp_http_client_fetch_headers(client_handle);
-        if(headers){
-            int len = esp_http_client_read(client_handle, buffer, OTA_MAX_LENGTH);
-            error = len < OTA_VERSION_INDEX;
-        } else ESP_LOGE(OTA_LOG_TAG, "%s", headers==-ESP_ERR_HTTP_EAGAIN? "timed out before any data was ready": "failed to fetch headers");
-    }
-    if(error){
-        latest[0] = 0;
-    }else{
-        for(size_t vi = 0, bi = OTA_VERSION_INDEX; buffer[++bi]; vi++){
-            latest[vi] = buffer[bi];
-            if(latest[vi] != current[vi]) up_to_date = false;
+    if(loge_success(OTA_LOG_TAG, esp_http_client_perform(client_handle), "HTTPS Request failed")){
+        for(size_t i = 0; current[i] && (i < 32); i++){
+            if(current[i] != latest[i]){
+                up_to_date = false;
+                break;
+            }
         }
-    }
+    }else latest[0] = 0;
     esp_http_client_cleanup(client_handle);
 }
 
@@ -79,8 +73,11 @@ void ota_update(){
         return;
     }
 
+    snprintf(buffer, OTA_MAX_LENGTH, "%s%s.bin", OTA_RELEASE_URL, hardware);
+    ESP_LOGI(OTA_LOG_TAG, "Generated link: %s", buffer);
+
     esp_http_client_config_t client_config = {
-        .url                = url,
+        .url                = buffer,
         .crt_bundle_attach  = esp_crt_bundle_attach,
     };
     esp_https_ota_config_t ota_config = {
